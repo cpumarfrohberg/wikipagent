@@ -1,6 +1,8 @@
 # Pydantic models for RAG Agent
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from wikiagent.config import MAX_TITLE_LENGTH, MIN_TITLE_LENGTH
 
 # Constants for validation
 MIN_CONFIDENCE_SCORE = 0.0
@@ -24,7 +26,9 @@ class SearchResult(BaseModel):
 
 
 class SearchAgentAnswer(BaseModel):
-    answer: str = Field(..., description="The answer to the user's question")
+    answer: str = Field(
+        ..., min_length=1, description="The answer to the user's question"
+    )
     confidence: float = Field(
         ...,
         ge=MIN_CONFIDENCE_SCORE,
@@ -32,7 +36,9 @@ class SearchAgentAnswer(BaseModel):
         description=f"Confidence in the answer ({MIN_CONFIDENCE_SCORE} to {MAX_CONFIDENCE_SCORE})",
     )
     sources_used: list[str] = Field(
-        ..., description="List of source filenames used to generate the answer"
+        ...,
+        min_length=1,
+        description="List of source filenames used to generate the answer",
     )
     reasoning: str | None = Field(
         None, description="Brief explanation of the reasoning behind the answer"
@@ -46,11 +52,33 @@ class WikipediaSearchResult(BaseModel):
     size: int | None = Field(None, description="Page size in bytes")
     word_count: int | None = Field(None, description="Word count of the page")
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Title cannot be empty")
+        if len(v) < MIN_TITLE_LENGTH:
+            raise ValueError(f"Title too short (min {MIN_TITLE_LENGTH} chars)")
+        if len(v) > MAX_TITLE_LENGTH:
+            raise ValueError(f"Title too long (max {MAX_TITLE_LENGTH} chars)")
+        return v
+
 
 class WikipediaPageContent(BaseModel):
     title: str = Field(..., description="Wikipedia page title")
     content: str = Field(..., description="Raw wikitext content")
     url: str | None = Field(None, description="Full Wikipedia URL")
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Title cannot be empty")
+        if len(v) < MIN_TITLE_LENGTH:
+            raise ValueError(f"Title too short (min {MIN_TITLE_LENGTH} chars)")
+        if len(v) > MAX_TITLE_LENGTH:
+            raise ValueError(f"Title too long (max {MAX_TITLE_LENGTH} chars)")
+        return v
 
 
 class TokenUsage(BaseModel):
