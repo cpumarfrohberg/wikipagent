@@ -6,26 +6,16 @@ build-backend = "hatchling.build"
 name = "user_behavior"
 version = "0.1.0"
 description = "discover patterns in user behavior"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pymongo>=4.0.0",
+    "pandas>=2.0.0",
     "typer>=0.9.0",
-    "sentence-transformers>=2.2.0",
-    "numpy>=1.24.0",
-    "ollama>=0.1.0",  # TODO: Remove after migration to OpenAI (Step 1)
     "pydantic>=2.0.0",
     "pydantic-ai>=0.0.12",  # Includes openai dependency for OpenAI support
-    "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
-    "streamlit>=1.28.0",
-    "redis>=4.5.0",
-    "neo4j==5.14.1",
-    "retry==0.9.2",
-    "pandas>=2.0.0",
     "python-dotenv>=1.0.0",
-    "minsearch>=0.0.7",
-    "tiktoken>=0.5.0",
+    "requests>=2.31.0",
+    "streamlit>=1.28.0",
+    "jaxn>=0.0.1",
 ]
 
 [project.scripts]
@@ -40,6 +30,7 @@ dev-dependencies = [
     "pytest-cov>=4.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-timeout>=2.1.0",
+    "pytest-mock>=3.12.0",
     "ruff>=0.6.0",
     "pre-commit>=3.0.0",
 ]
