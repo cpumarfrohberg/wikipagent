@@ -2,10 +2,10 @@
 
 import pytest
 import pytest_asyncio
-
-from config import SearchType
 from rag_agent.agent import RAGAgent
 from rag_agent.config import RAGConfig
+
+from config import SearchType
 
 
 @pytest.fixture

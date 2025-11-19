@@ -1,11 +1,11 @@
 """Tests for RAG Agent tools"""
 
 import pytest
-
-from config import SearchType
 from rag_agent.models import SearchResult
 from rag_agent.tools import initialize_search_index, search_documents
 from search.search_utils import SearchIndex
+
+from config import SearchType
 
 
 @pytest.fixture

@@ -1,5 +1,4 @@
 import pytest
-
 from rag_agent.models import RAGAnswer
 
 
