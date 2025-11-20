@@ -1,31 +1,17 @@
 services:
-  mongodb:
-    image: mongo:latest
+  streamlit-app:
+    build: .
     ports:
-      - "27017:27017"
+      - "8501:8501"
     volumes:
-      - mongodb_data:/data/db
+      - ./.env:/app/.env:ro
     environment:
-      - MONGO_INITDB_DATABASE=user_behavior
-
-  neo4j:
-    image: neo4j:5-community
-    ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
-    volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-    environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-your_secure_password}
-      - NEO4J_PLUGINS=apoc
-
-  # Ollama is now running locally (not in Docker)
-  # Install locally: brew install ollama
-  # Start locally: ollama serve (or it auto-starts on Mac)
-  # Pull models: ollama pull llama3.2:3b
-
-volumes:
-  mongodb_data:
-  neo4j_data:
-  neo4j_logs:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - TMPDIR=/tmp
+      - TEMP=/tmp
+      - TMP=/tmp
+      - NODE_TMPDIR=/tmp
+    env_file:
+      - .env
+    restart: unless-stopped
