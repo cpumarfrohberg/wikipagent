@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ENV TMPDIR=/tmp
+
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -8,14 +10,18 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-RUN pip install requests pymongo python-dotenv ollama
+RUN pip install uv
+
+COPY pyproject.toml uv.lock ./
+
+RUN TMPDIR=/tmp uv pip install --system -e .
 
 COPY config/ ./config/
-COPY stream_stackexchange/ ./stream_stackexchange/
+COPY wikiagent/ ./wikiagent/
+COPY streamlit_app.py ./
 
-RUN mkdir -p /app/data
-
-ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "stream_stackexchange/collector.py"]
+EXPOSE 8501
+
+CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

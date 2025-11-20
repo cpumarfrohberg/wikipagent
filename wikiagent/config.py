@@ -55,6 +55,7 @@ MAX_QUERY_LENGTH = 300
 MIN_TITLE_LENGTH = 1
 MAX_TITLE_LENGTH = 255
 
+# Error mappings for agent error handling
 ERROR_MAPPINGS = {
     ErrorCategory.WIKIPEDIA: {
         "error_type": "WikipediaAPI",

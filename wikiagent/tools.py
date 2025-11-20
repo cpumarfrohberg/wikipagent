@@ -1,7 +1,3 @@
-# Tool functions for Wikipedia Agent
-"""Wikipedia API tools for searching and retrieving page content"""
-
-import logging
 from typing import List
 from urllib.parse import quote
 
@@ -12,21 +8,15 @@ from wikiagent.config import (
     MAX_PAGE_CONTENT_LENGTH,
     MAX_QUERY_LENGTH,
     MAX_TITLE_LENGTH,
-    MIN_QUERY_LENGTH,
-    MIN_TITLE_LENGTH,
     USER_AGENT,
 )
 from wikiagent.models import WikipediaPageContent, WikipediaSearchResult
-
-logger = logging.getLogger(__name__)
 
 
 def _validate_search_query(query: str) -> None:
     """Validate search query input before API call"""
     if not query or not query.strip():
         raise ValueError("Search query cannot be empty")
-    if len(query) < MIN_QUERY_LENGTH:
-        raise ValueError(f"Search query too short (min {MIN_QUERY_LENGTH} chars)")
     if len(query) > MAX_QUERY_LENGTH:
         raise ValueError(f"Search query too long (max {MAX_QUERY_LENGTH} chars)")
 
@@ -35,8 +25,6 @@ def _validate_page_title(title: str) -> None:
     """Validate page title input before API call"""
     if not title or not title.strip():
         raise ValueError("Page title cannot be empty")
-    if len(title) < MIN_TITLE_LENGTH:
-        raise ValueError(f"Page title too short (min {MIN_TITLE_LENGTH} chars)")
     if len(title) > MAX_TITLE_LENGTH:
         raise ValueError(f"Page title too long (max {MAX_TITLE_LENGTH} chars)")
 
@@ -63,14 +51,13 @@ def wikipedia_search(query: str) -> List[WikipediaSearchResult]:
     _validate_search_query(query)
 
     try:
-        # Replace spaces with "+" for Wikipedia API
         search_query = query.replace(" ", "+")
 
         url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch={search_query}"
 
         headers = {"User-Agent": USER_AGENT}
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()  # Raise exception for bad status codes
+        response.raise_for_status()
 
         data = response.json()
 
@@ -82,7 +69,6 @@ def wikipedia_search(query: str) -> List[WikipediaSearchResult]:
 
             for item in search_items:
                 try:
-                    # Let Pydantic validate the data
                     result = WikipediaSearchResult(
                         title=item.get("title", ""),
                         snippet=item.get("snippet"),
@@ -91,8 +77,7 @@ def wikipedia_search(query: str) -> List[WikipediaSearchResult]:
                         word_count=item.get("wordcount"),
                     )
                     search_results.append(result)
-                except ValidationError as e:
-                    logger.warning(f"Skipping invalid search result: {e}")
+                except ValidationError:
                     continue
 
         return search_results
@@ -131,7 +116,6 @@ def wikipedia_get_page(title: str) -> WikipediaPageContent:
         RuntimeError: If network error or HTTP error other than 404 occurs
     """
     _validate_page_title(title)
-    # Replace spaces with underscores for Wikipedia URL (used in all code paths)
     page_title = title.replace(" ", "_")
 
     try:
@@ -157,7 +141,6 @@ def wikipedia_get_page(title: str) -> WikipediaPageContent:
 
         wikipedia_url = f"https://en.wikipedia.org/wiki/{page_title}"
 
-        # Let Pydantic validate the response data
         return WikipediaPageContent(
             title=title,
             content=content,
@@ -167,33 +150,22 @@ def wikipedia_get_page(title: str) -> WikipediaPageContent:
     except ValueError:
         raise
     except requests.HTTPError as e:
-        # Handle 404 gracefully (page doesn't exist - agent can continue)
         if e.response and e.response.status_code == 404:
-            logger.warning(f"Wikipedia page not found: {title} (404)")
-            # Let Pydantic validate even error responses
             return WikipediaPageContent(
                 title=title,
                 content=f"[Page not found: {title} does not exist on Wikipedia]",
                 url=f"https://en.wikipedia.org/wiki/{page_title}",
             )
         else:
-            # Other HTTP errors (500, 503, etc.) - raise exception (server issues)
             status_code = e.response.status_code if e.response else "unknown"
-            logger.error(f"HTTP error retrieving Wikipedia page {title}: {status_code}")
             raise RuntimeError(
                 f"Failed to get Wikipedia page {title}: HTTP {status_code}"
             )
     except requests.RequestException as e:
-        # Network errors, timeouts, connection issues - raise exception (infrastructure problems)
-        logger.error(f"Network error retrieving Wikipedia page {title}: {str(e)}")
         raise RuntimeError(f"Failed to get Wikipedia page {title}: {str(e)}")
     except ValidationError as e:
-        logger.error(f"Validation error for Wikipedia page {title}: {e}")
         raise RuntimeError(f"Invalid data received for page {title}: {str(e)}")
     except Exception as e:
-        # Any other unexpected errors - log and return empty
-        logger.warning(f"Unexpected error retrieving Wikipedia page {title}: {str(e)}")
-        # Let Pydantic validate even error responses
         return WikipediaPageContent(
             title=title,
             content=f"[Error retrieving page: {title} - {str(e)}]",
